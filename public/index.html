@@ -11,7 +11,7 @@
         body { background: #0b141a; color: white; font-family: sans-serif; overflow: hidden; }
         .screen { height: 100dvh; width: 100%; position: absolute; transition: 0.4s ease; background: #0b141a; }
         .hidden-scr { transform: translateX(100%); opacity: 0; pointer-events: none; }
-        .chat-bg { background-color: #0b141a; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-blend-mode: overlay; }
+        .chat-bg { background-color: #0b141a; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d7088a5728.png'); background-blend-mode: overlay; background-size: contain; }
         input { background: #2a3942 !important; border-radius: 12px; padding: 12px; width: 100%; outline: none; margin-bottom: 10px; color: white; }
         .story-ring { min-width: 65px; height: 65px; border-radius: 50%; border: 2px solid #00a884; padding: 2px; object-fit: cover; }
         .bubble-me { background: #005c4b; align-self: flex-end; border-radius: 15px 0 15px 15px; padding: 8px 12px; max-width: 80%; }
@@ -33,20 +33,23 @@
             <input type="number" id="r-phone" placeholder="Nomor HP">
             <input type="password" id="r-pass" placeholder="Kata Sandi">
             <button onclick="handleReg()" class="w-full bg-[#00a884] p-4 rounded-xl text-black font-bold mt-2">DAFTAR</button>
-            <p class="text-center mt-6 text-sm text-gray-400">Sudah punya akun? <span class="text-[#00a884] font-bold" onclick="toggleAuth(true)">Masuk</span></p>
+            <p class="text-center mt-6 text-sm text-gray-400">Sudah punya akun? <span class="text-[#00a884] font-bold cursor-pointer" onclick="toggleAuth(true)">Masuk</span></p>
         </div>
         <div id="log-form" class="hidden">
             <input type="number" id="l-phone" placeholder="Nomor HP">
             <input type="password" id="l-pass" placeholder="Kata Sandi">
             <button onclick="handleLog()" class="w-full bg-[#00a884] p-4 rounded-xl text-black font-bold mt-2">MASUK</button>
-            <p class="text-center mt-6 text-sm text-gray-400">Belum punya akun? <span class="text-[#00a884] font-bold" onclick="toggleAuth(false)">Daftar</span></p>
+            <p class="text-center mt-6 text-sm text-gray-400">Belum punya akun? <span class="text-[#00a884] font-bold cursor-pointer" onclick="toggleAuth(false)">Daftar</span></p>
         </div>
     </div>
 
     <div id="scr-dash" class="screen hidden-scr flex flex-col">
         <div class="bg-[#202c33] p-4 pt-10 flex justify-between items-center shadow-md">
             <div class="flex items-center gap-3">
-                <img id="my-pfp" src="" class="w-10 h-10 rounded-full object-cover">
+                <div class="relative">
+                    <img id="my-pfp" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-10 h-10 rounded-full object-cover border border-[#00a884] cursor-pointer" onclick="document.getElementById('change-pfp-input').click()">
+                    <input type="file" id="change-pfp-input" class="hidden" accept="image/*" onchange="updateProfilePhoto(this)">
+                </div>
                 <span class="font-bold text-xl text-[#00a884]">GEN Z</span>
             </div>
             <div class="flex gap-5 text-gray-400 text-xl">
@@ -62,7 +65,7 @@
 
     <div id="scr-chat" class="screen hidden-scr flex flex-col z-40">
         <div class="bg-[#202c33] p-3 flex items-center gap-3">
-            <i class="fas fa-arrow-left p-2" onclick="nav('dash')"></i>
+            <i class="fas fa-arrow-left p-2 cursor-pointer" onclick="nav('dash')"></i>
             <div class="flex-1">
                 <h4 id="target-name" class="font-bold text-sm">Nama</h4>
                 <p id="target-status" class="text-[10px] text-gray-400">Status</p>
@@ -72,7 +75,7 @@
         <div id="chat-box" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2 chat-bg"></div>
         <div class="p-3 bg-[#0b141a] flex gap-3 items-center border-t border-gray-800">
             <input type="text" id="m-inp" placeholder="Ketik pesan..." class="flex-1 bg-[#2a3942] p-2 rounded-xl text-sm">
-            <button onclick="sendMsg()" class="w-10 h-10 bg-[#00a884] rounded-full text-black flex items-center justify-center"><i class="fas fa-paper-plane text-xs"></i></button>
+            <button onclick="sendMsg()" class="w-10 h-10 bg-[#00a884] rounded-full text-black flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
@@ -80,7 +83,7 @@
         <div class="bg-[#232d36] w-80 p-6 rounded-3xl" onclick="event.stopPropagation()">
             <h3 class="text-[#00a884] font-bold mb-6">PENGATURAN</h3>
             <div class="space-y-4">
-                <div class="flex justify-between items-center" onclick="document.getElementById('f-ring').click()">
+                <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('f-ring').click()">
                     <span class="text-sm">Nada Pesan</span>
                     <i class="fas fa-music text-gray-500"></i>
                     <input type="file" id="f-ring" class="hidden" onchange="saveRing(this)">
@@ -91,138 +94,60 @@
     </div>
 
     <script>
-        const socket = io();
-        let session = JSON.parse(localStorage.getItem('genz_session'));
-        let targetPhone = null, avatarData = "", onlineUsers = [];
-
-        function nav(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden-scr'));
-            document.getElementById('scr-' + id).classList.remove('hidden-scr');
+        // LOGIKA GANTI FOTO PROFIL DASHBOARD
+        function updateProfilePhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64Image = e.target.result;
+                    // Update tampilan
+                    document.getElementById('my-pfp').src = base64Image;
+                    // Simpan permanen di LocalStorage
+                    localStorage.setItem('genz_pfp', base64Image);
+                    alert('Foto Profil Berhasil Diganti!');
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
         }
 
-        function toggleAuth(isLog) {
-            document.getElementById('log-form').classList.toggle('hidden', !isLog);
-            document.getElementById('reg-form').classList.toggle('hidden', isLog);
+        // LOAD FOTO SAAT APLIKASI DIBUKA
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedPfp = localStorage.getItem('genz_pfp');
+            if (savedPfp) {
+                document.getElementById('my-pfp').src = savedPfp;
+            }
+        });
+
+        // FUNGSI AUTH & NAVIGASI (DUMMY/DASAR)
+        function toggleAuth(isLogin) {
+            document.getElementById('reg-form').classList.toggle('hidden', isLogin);
+            document.getElementById('log-form').classList.toggle('hidden', !isLogin);
         }
 
         function previewReg(input) {
-            const r = new FileReader();
-            r.onload = e => { avatarData = e.target.result; document.getElementById('reg-prev').src = avatarData; };
-            r.readAsDataURL(input.files[0]);
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => document.getElementById('reg-prev').src = e.target.result;
+                reader.readAsDataURL(input.files[0]);
+            }
         }
 
-        async function handleReg() {
-            const data = {
-                name: document.getElementById('r-name').value,
-                phone: document.getElementById('r-phone').value,
-                pass: document.getElementById('r-pass').value,
-                avatar: avatarData
-            };
-            const res = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }).then(r=>r.json());
-            if(res.success) { alert("Berhasil! Silakan Login."); toggleAuth(true); } else alert(res.msg);
+        function handleLog() { nav('dash'); }
+        function handleReg() { nav('dash'); }
+
+        function nav(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden-scr'));
+            document.getElementById('scr-' + screenId).classList.remove('hidden-scr');
         }
 
-        async function handleLog() {
-            const phone = document.getElementById('l-phone').value;
-            const pass = document.getElementById('l-pass').value;
-            const res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone, pass}) }).then(r=>r.json());
-            if(res.success) {
-                localStorage.setItem('genz_session', JSON.stringify(res.user));
-                session = res.user;
-                initApp();
-            } else alert(res.msg);
+        function showSettings(show) {
+            document.getElementById('modal-set').style.display = show ? 'flex' : 'none';
         }
 
-        function initApp() {
-            if(!session) return nav('auth');
-            document.getElementById('scr-auth').style.display = 'none';
-            document.getElementById('my-pfp').src = session.avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
-            socket.emit('join', session);
-            nav('dash');
-            renderContacts();
+        function doLogout() {
+            localStorage.removeItem('genz_pfp');
+            location.reload();
         }
-
-        function postStatus(input) {
-            const r = new FileReader();
-            r.onload = e => { socket.emit('postStory', { from: session.name, img: e.target.result }); alert("Status Terkirim!"); };
-            r.readAsDataURL(input.files[0]);
-        }
-
-        function addFriend() {
-            const p = prompt("Nomor HP Teman:");
-            if(!p) return;
-            let c = JSON.parse(localStorage.getItem('c_'+session.phone) || "[]");
-            if(c.find(x => x.phone === p)) return alert("Sudah ada di kontak");
-            c.push({ phone: p, name: "Teman "+p });
-            localStorage.setItem('c_'+session.phone, JSON.stringify(c));
-            renderContacts();
-        }
-
-        function renderContacts() {
-            const list = document.getElementById('contact-list');
-            const contacts = JSON.parse(localStorage.getItem('c_'+session.phone) || "[]");
-            list.innerHTML = contacts.map(c => {
-                const isOnline = onlineUsers.includes(c.phone);
-                return `
-                <div onclick="openChat('${c.phone}', '${c.name}')" class="flex items-center gap-4 p-4 border-b border-gray-900 hover:bg-[#202c33] transition">
-                    <div class="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center font-bold text-xl">${c.name[0]}</div>
-                    <div class="flex-1">
-                        <h4 class="font-bold text-sm">${c.name}</h4>
-                        <p class="text-[10px] ${isOnline ? 'text-green-500' : 'text-gray-500'}">${isOnline ? 'Online' : 'Offline'}</p>
-                    </div>
-                </div>`;
-            }).join('');
-        }
-
-        function openChat(p, n) { targetPhone = p; document.getElementById('target-name').innerText = n; document.getElementById('chat-box').innerHTML = ''; nav('chat'); }
-
-        function sendMsg() {
-            const i = document.getElementById('m-inp');
-            if(!i.value) return;
-            const m = { to: targetPhone, from: session.phone, text: i.value, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) };
-            socket.emit('privateMessage', m);
-            pushBubble(m, true);
-            i.value = '';
-        }
-
-        function pushBubble(m, me) {
-            const b = document.getElementById('chat-box');
-            const d = document.createElement('div');
-            d.className = me ? 'bubble-me' : 'bubble-you';
-            d.innerHTML = `<p class="text-sm">${m.text}</p><p class="text-[9px] text-gray-300 text-right mt-1">${m.time}</p>`;
-            b.appendChild(d); b.scrollTop = b.scrollHeight;
-        }
-
-        function showSettings(s) { document.getElementById('modal-set').style.display = s ? 'flex' : 'none'; }
-        
-        function saveRing(i) {
-            const r = new FileReader();
-            r.onload = e => { localStorage.setItem('ring_msg', e.target.result); alert("Nada Dering Disimpan!"); };
-            r.readAsDataURL(i.files[0]);
-        }
-
-        socket.on('onlineUsers', data => { onlineUsers = data; renderContacts(); });
-        socket.on('receivePrivate', d => { 
-            if(d.from === targetPhone) pushBubble(d, false);
-            const sound = localStorage.getItem('ring_msg');
-            new Audio(sound || 'https://www.myinstants.com/media/sounds/whatsapp-notification.mp3').play();
-        });
-        
-        socket.on('initStories', data => updateStoryUI(data));
-        socket.on('updateStories', data => updateStoryUI(data));
-
-        function updateStoryUI(data) {
-            const bar = document.getElementById('story-bar');
-            bar.innerHTML = data.map(s => `
-                <div class="text-center min-w-[70px]">
-                    <img src="${s.img}" class="story-ring" onclick="alert('Story dari ${s.from}')">
-                    <p class="text-[9px] mt-1 text-gray-400 truncate w-16">${s.from}</p>
-                </div>`).join('');
-        }
-
-        function doLogout() { localStorage.clear(); location.reload(); }
-        
-        window.onload = () => { if(session) initApp(); else nav('auth'); };
     </script>
 </body>
 </html>
